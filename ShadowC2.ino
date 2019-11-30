@@ -120,23 +120,10 @@ int motorControllerBaudRate = 9600; // Set the baud rate for the Syren motor con
 // ---------------------------------------------------------------------------------------
 //                          Sound Settings
 // ---------------------------------------------------------------------------------------
-//Uncomment one line based on your sound system
-//#define SOUND_CFSOUNDIII     //Original system tested with SHADOW
+
 #define SOUND_MP3TRIGGER   //Code Tested by Dave C. and Marty M.
-//#define SOUND_ROGUE_RMP3   //Support coming soon
-//#define SOUND_RASBERRYPI   //Support coming soon
 
 //#define EXTRA_SOUNDS
-
-
-// ---------------------------------------------------------------------------------------
-//                          Dome Control System
-// ---------------------------------------------------------------------------------------
-//Uncomment one line based on your Dome Control
-//#define DOME_I2C_ADAFRUIT       //Current SHADOW configuration used with R-Series Logics
-//#define DOME_SERIAL_TEECES    //Original system tested with SHADOW
-//#define DOME_I2C_TEECES       //Untested Nov 2014
-
 
 
 
@@ -187,40 +174,12 @@ int coinSlotLedState[numberOfCoinSlotLEDs]; // Array indicating the state of the
 #endif
 #include <Sabertooth.h>
 #include <Servo.h>
-#include <LedControl.h>
-
-#ifdef DOME_SERIAL_TEECES    
-#include <EasyTransfer.h>
-#endif
-
-#ifdef DOME_I2C_TEECES    
-#include <EasyTransferI2C.h>
-#endif
-
-#ifdef DOME_I2C_ADAFRUIT    
+#include <LedControl.h>   
 #include <Wire.h>
-//#include <Servos.h>  //Attempted to use the "SlowServo library from BHD.... had issues
-#endif
 
-//This is the traditional sound controler that has been used with PADAWAN
-#ifdef SOUND_MP3TRIGGER
+
 #include <MP3Trigger.h>
 MP3Trigger trigger;
-#endif
-
-//Custom written Libraryy for the old CFSoundIII to emulate 12 button remote
-//CFSoundIII needs a supporting CFSOUND.BAS version running on the CFSoundIII 
-#ifdef SOUND_CFSOUNDIII
-#include <CFSoundIII.h>
-CFSoundIII cfSound;
-#endif
-
-//#ifdef  SOUND_ROGUE_RMP3
-//TODO:add rMP3 support
-//#endif
-//#ifdef  SOUND_RASBERRYPI
-//TODO:add Raspberry Pi Sound support
-//#endif
 
 
 // ---------------------------------------------------------------------------------------
@@ -238,92 +197,10 @@ Sabertooth *ST=new Sabertooth(SABERTOOTH_ADDR, Serial);
 #endif
 Sabertooth *SyR=new Sabertooth(SYREN_ADDR, Serial);
 
-
-#ifdef DOME_SERIAL_TEECES    
-    EasyTransfer ET;
-#endif
-
-#ifdef DOME_I2C_TEECES    
-    EasyTransferI2C ET;
-#endif
-
-#if defined(DOME_SERIAL_TEECES) || defined(DOME_I2C_TEECES)
-    struct SEND_DATA_STRUCTURE
-    {
-        //put your variable definitions here for the data you want to send
-        //THIS MUST BE EXACTLY THE SAME ON THE OTHER ARDUINO
-        int hpx; // hp movement
-        int hpy; // hp movement
-        int hpl; // hp light
-        int hpa; // hp automation
-        int dsp; // 100=no change, 0=random, 1=alarm, 4=whistle, 5=leia, 6=short circut, 10=EQ, 11=alarm2,
-    };         // 21=speed1, 22=speed2, 23=speed3, 24=logics+, 25=logics-
-    SEND_DATA_STRUCTURE domeData;//give a name to the group of data
-#endif 
-
-
-#ifdef DOME_I2C_ADAFRUIT    
-    const int HOLO_FRONT = 1;
-    const int HOLO_BACK = 2;
-    const int HOLO_TOP = 3;
-    
-    const int HOLO_DELAY = 20000; //up to 20 second delay
-
-    
-    const int HOLO_FRONT_RED_PWM_PIN     = 0;
-    const int HOLO_FRONT_GREEN_PWM_PIN   = 1;
-    const int HOLO_FRONT_BLUE_PWM_PIN    = 2;
-    const int HOLO_FRONT_X_PWM_PIN       = 3;
-    const int HOLO_FRONT_Y_PWM_PIN       = 4;
-    const int HOLO_BACK_RED_PWM_PIN      = 5;
-    const int HOLO_BACK_GREEN_PWM_PIN    = 6;
-    const int HOLO_BACK_BLUE_PWM_PIN     = 7;
-    const int HOLO_BACK_X_PWM_PIN        = 8;
-    const int HOLO_BACK_Y_PWM_PIN        = 9;
-    const int HOLO_TOP_X_PWM_PIN        = 10;
-    const int HOLO_TOP_Y_PWM_PIN        = 11;
-    const int HOLO_TOP_RED_PWM_PIN      = 12;
-    const int HOLO_TOP_GREEN_PWM_PIN    = 13;
-    const int HOLO_TOP_BLUE_PWM_PIN     = 14;
-
-
-   const int HOLO_SERVO_CTR = 300;
-
-    const int HOLO_FRONT_X_SERVO_MIN = 265; //250; //150;  // Issues with resin holo...
-    const int HOLO_FRONT_X_SERVO_MAX = 315; //350; //600;  // Issues with resin holo...
-    const int HOLO_FRONT_Y_SERVO_MIN = 250; //200; //150;  // Issues with resin holo...
-    const int HOLO_FRONT_Y_SERVO_MAX = 330; //400; //600;  // Issues with resin holo...
-    
-    const int HOLO_BACK_X_SERVO_MIN = 275; //250; //150;
-    const int HOLO_BACK_X_SERVO_MAX = 325; //350; //600; 
-    const int HOLO_BACK_Y_SERVO_MIN = 250; //200; //150;
-    const int HOLO_BACK_Y_SERVO_MAX = 350; //400; //600; 
-    
-    const int HOLO_TOP_X_SERVO_MIN = 275; //250; //150;
-    const int HOLO_TOP_X_SERVO_MAX = 325; //350; //600; 
-    const int HOLO_TOP_Y_SERVO_MIN = 250; //200; //150;
-    const int HOLO_TOP_Y_SERVO_MAX = 350; //400; //600; 
-    
-    const int HOLO_LED_OFF = 0;
-    const int HOLO_LED_ON = 1;
-    const int HOLO_LED_FLICKER = 2;    
-    int holoLightFrontStatus = 0;
-    int holoLightBackStatus = 0;
-    int holoLightTopStatus = 0;
-   
-    uint32_t holoFrontRandomTime = 0;
-    uint32_t holoBackRandomTime = 0;
-    uint32_t holoTopRandomTime = 0;
-    Adafruit_PWMServoDriver domePWM = Adafruit_PWMServoDriver();
-#endif
-
 //////Setup for body PWM servo board//////////////////////////////////
 Adafruit_PWMServoDriver bodyPWM = Adafruit_PWMServoDriver();
 
 const int PWM_OFF = 4095;  //setting from Adafruit
-
-
-
 
 
 ///////Setup for USB and Bluetooth Devices////////////////////////////
@@ -371,6 +248,7 @@ unsigned long DriveMillis = 0;
 
 Servo UtilArmTopServo;  // create servo object to control a servo 
 Servo UtilArmBottomServo;  // create servo object to control a servo
+
 #if FOOT_CONTROLLER ==1
 Servo leftFootSignal;
 Servo rightFootSignal;
