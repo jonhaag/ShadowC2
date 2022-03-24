@@ -232,7 +232,7 @@ byte vol = 40; // 0 = full volume, 255 off
 boolean isStickEnabled = true;
 byte isAutomateDomeOn = false;
 unsigned long automateMillis = 0;
-byte automateDelay = random(5, 20);
+
 
 // Dome Automation Variables
 boolean domeAutomation = false;
@@ -242,7 +242,7 @@ unsigned long domeStopTurnTime = 0;    // millis() when next turn should stop
 unsigned long domeStartTurnTime = 0;  // millis() when next turn should start
 int domeStatus = 0;  // 0 = stopped, 1 = prepare to turn, 2 = turning
 
-
+byte automateDelay = random(5, 20);
 byte action = 0; //used for automation sounds
 unsigned long DriveMillis = 0;
 
