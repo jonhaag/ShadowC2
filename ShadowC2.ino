@@ -1,7 +1,7 @@
 // =======================================================================================
 //                 SHADOW :  Small Handheld Arduino Droid Operating Wand
 // =======================================================================================
-//                          Last Revised Date: 11/25/19
+//                          Last Revised Date: 03/25/22
 //                             Written By: KnightShade
 //                        Inspired by the PADAWAN by danf
 //                      Bug Fixes from BlackSnake and vint43
@@ -10,8 +10,11 @@
 //
 // ======================================================================================
 // Modifications by jonhaag
+// 12/01/19
 //  - Added random sounds into the dome automation routine
 //  - Removed dome lighting control
+// 03/25/22
+//  - Removed utility arm & LED coin slot code
 //
 // =======================================================================================
 //
@@ -131,20 +134,9 @@ int motorControllerBaudRate = 9600; // Set the baud rate for the Syren motor con
 //                          Utility Arm Settings
 // ---------------------------------------------------------------------------------------
 
-//Utility Arm Contribution by Dave C.
-//TODO:  Move PINS to upper part of Mega for Shield purposes
-const int UTILITY_ARM_TOP_PIN   = 9;
-const int UTILITY_ARM_BOTTOM_PIN  = 11;
-
-int utilArmClosedPos = 5;    // variable to store the servo closed position 
-int utilArmOpenPos = 130;    // variable to store the servo Opened position 
-
 // Check value, open = true, closed = false
 boolean isUtilArmTopOpen = false;    
 boolean isUtilArmBottomOpen = false;
-
-int UtilArmBottomPos = 0;
-int UtilArmTopPos = 0;
 
 const int UTIL_ARM_TOP = 1;
 const int UTIL_ARM_BOTTOM = 2;
@@ -153,12 +145,6 @@ const int UTIL_ARM_BOTTOM = 2;
 //                          LED Settings
 // ---------------------------------------------------------------------------------------
 
-//Coin Slot LED Contribution by Dave C.
-//TODO:  Move PINS to upper part of Mega for Shield purposes
-#define numberOfCoinSlotLEDs 3
-int COIN_SLOT_LED_PINS[] = { 2, 3, 4 }; // LED pins to use.
-long nextCoinSlotLedFlash[numberOfCoinSlotLEDs]; // Array indicating which LED to flash next.
-int coinSlotLedState[numberOfCoinSlotLEDs]; // Array indicating the state of the LED's.
 
 
 // ---------------------------------------------------------------------------------------
@@ -167,7 +153,6 @@ int coinSlotLedState[numberOfCoinSlotLEDs]; // Array indicating the state of the
 #include <PS3BT.h>
 #include <SPP.h>
 #include <usbhub.h>
-#include <Adafruit_PWMServoDriver.h>
 // Satisfy IDE, which only needs to see the include statment in the ino.
 #ifdef dobogusinclude
 #include <spi4teensy3.h>
@@ -196,12 +181,6 @@ int serialLatency = 25;   //This is a delay factor in ms to prevent queueing of 
 Sabertooth *ST=new Sabertooth(SABERTOOTH_ADDR, Serial);
 #endif
 Sabertooth *SyR=new Sabertooth(SYREN_ADDR, Serial);
-
-//////Setup for body PWM servo board//////////////////////////////////
-Adafruit_PWMServoDriver bodyPWM = Adafruit_PWMServoDriver();
-
-const int PWM_OFF = 4095;  //setting from Adafruit
-
 
 ///////Setup for USB and Bluetooth Devices////////////////////////////
 USB Usb;
@@ -312,26 +291,7 @@ void setup()
     //
     //       If you have a 2x12, 2x25 V2, 2x60 or SyRen 50, you can remove
     //       the autobaud line and save yourself two seconds of startup delay.
-
-
-    //Setup for body PWM board          
-        bodyPWM.begin();
-        bodyPWM.setPWMFreq(50);  // Analog servos run at ~50 Hz updates
-
-    //Setup for Utility Arm Servo's    
-    UtilArmTopServo.attach(UTILITY_ARM_TOP_PIN);  
-    UtilArmBottomServo.attach(UTILITY_ARM_BOTTOM_PIN);
-    closeUtilArm(UTIL_ARM_TOP);
-    closeUtilArm(UTIL_ARM_BOTTOM);
-    
-    //Setup for Coin Slot LEDs    
-    for(int i = 0; i<numberOfCoinSlotLEDs; i++)
-    {
-      pinMode(COIN_SLOT_LED_PINS[i],OUTPUT);
-      coinSlotLedState[i] = LOW;
-      digitalWrite(COIN_SLOT_LED_PINS[i], LOW); // all LEDs off
-      nextCoinSlotLedFlash[i] = millis() +random(100, 1000);
-    }     
+  
 }
 
 boolean readUSB()
@@ -380,11 +340,9 @@ void loop()
     }
     automateDome();
     domeDrive();
-
-    utilityArms();
+    
     toggleSettings();
     soundControl();
-    flashCoinSlotLEDs();
     flushAndroidTerminal();
 }
 
@@ -1259,7 +1217,7 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing top utility arm\r\n";
               #endif
               
-                waveUtilArm(UTIL_ARM_TOP);
+                //waveUtilArm(UTIL_ARM_TOP); REPLACE!
           }
           if(myPS3->getButtonPress(L1)&&myPS3->getButtonClick(CIRCLE))
           {
@@ -1267,7 +1225,7 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing bottom utility arm\r\n";
               #endif
               
-                waveUtilArm(UTIL_ARM_BOTTOM);
+                //waveUtilArm(UTIL_ARM_BOTTOM); REPLACE!
           }
         break;
       case 2:
@@ -1279,7 +1237,7 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing top utility arm\r\n";
               #endif
               
-                waveUtilArm(UTIL_ARM_TOP);
+                //waveUtilArm(UTIL_ARM_TOP); REPLACE!
           }
           if(myPS3->getButtonClick(CIRCLE))
           {
@@ -1287,17 +1245,11 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing bottom utility arm\r\n";
               #endif
               
-                waveUtilArm(UTIL_ARM_BOTTOM);
+                //waveUtilArm(UTIL_ARM_BOTTOM); REPLACE!
           }
         }
         break;
     }
-}
-
-void utilityArms()
-{
-  if (PS3Nav->PS3NavigationConnected) ps3utilityArms(PS3Nav,1);
-  if (PS3Nav2->PS3NavigationConnected) ps3utilityArms(PS3Nav2,2);
 }
 
 void ps3ToggleSettings(PS3BT* myPS3 = PS3Nav)
@@ -1712,84 +1664,6 @@ void soundControl()
     }
     #endif
 }  
-
-
-void openUtilArm(int arm, int position = utilArmOpenPos)
-{
-    //When passed a position - this can "partially" open the arms.
-    //Great for more interaction
-    moveUtilArm(arm, utilArmOpenPos);
-}
-
-void closeUtilArm(int arm)
-{
-    moveUtilArm(arm, utilArmClosedPos);
-}
-
-void waveUtilArm(int arm)
-{
-    switch (arm)
-    {
-      case UTIL_ARM_TOP:
-        if(isUtilArmTopOpen == false){
-          openUtilArm(UTIL_ARM_TOP);
-        } else {
-          closeUtilArm(UTIL_ARM_TOP);
-        }
-        break;
-      case UTIL_ARM_BOTTOM:  
-        if(isUtilArmBottomOpen == false){
-          openUtilArm(UTIL_ARM_BOTTOM);
-        } else {
-          closeUtilArm(UTIL_ARM_BOTTOM);
-        }
-        break;
-    }
-}
-
-void moveUtilArm(int arm, int position)
-{
-    switch (arm)
-    {
-      case UTIL_ARM_TOP:
-        UtilArmTopServo.write(position);
-        if ( position == utilArmClosedPos)
-        {
-          isUtilArmTopOpen = false;
-        } else
-        {
-          isUtilArmTopOpen = true;
-        }
-        break;
-      case UTIL_ARM_BOTTOM:  
-        UtilArmBottomServo.write(position);
-        if ( position == utilArmClosedPos)
-        {
-          isUtilArmBottomOpen = false;
-        } else
-        {
-          isUtilArmBottomOpen = true;
-        }
-        break;
-    }
-}
-
-// =======================================================================================
-//          Flash Coin Slot LED Function
-// =======================================================================================
-void flashCoinSlotLEDs()
-{
-  for(int i = 0; i<numberOfCoinSlotLEDs; i++)
-  {
-    if(millis() > nextCoinSlotLedFlash[i])
-    {
-      if(coinSlotLedState[i] == LOW) coinSlotLedState[i] = HIGH; 
-      else coinSlotLedState[i] = LOW;
-      digitalWrite(COIN_SLOT_LED_PINS[i],coinSlotLedState[i]);
-      nextCoinSlotLedFlash[i] = millis()+random(100, 1000) ; // next toggle random time
-    } 
-  }
-}
 
 #ifdef TEST_CONROLLER
 void testPS3Controller(PS3BT* myPS3 = PS3Nav)
