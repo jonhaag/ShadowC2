@@ -1434,89 +1434,82 @@ void processSoundCommand(char soundCommand)
             output += soundCommand;
             output += " - Play Sceam\r\n";
           #endif
-          //Play Sceam
-          trigger.play(1);  
+
+          trigger.play(random(1,6));  
           break;
         case '2':   
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Seagulls.\r\n";
+            output += " - Play Laugh.\r\n";
           #endif        
-          // Play Wolf Whistle
-          trigger.play(2);
+          trigger.play(random(7,8));
           break;
         case '3':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Imperial Metal\r\n";
+            output += " - Play Alert\r\n";
           #endif        
-          //Play Doo Doo
-          trigger.play(3);
+          trigger.play(random(9,15));
           break;
         case '4':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Chortle\r\n";
+            output += " - Play Klaxon\r\n";
           #endif        
-          //Play Chortle
-          trigger.play(4);
+          trigger.play(16);
           break;
         case '5':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Random Sentence.\r\n";
+            output += " - Play Random Misc.\r\n";
           #endif        
-          // Play Random Sentence
-          trigger.play(random(5));
+          // Play Random Misc
+          trigger.play(random(17,32));
           break;
         case '6':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Random Misc.\r\n";
+            output += " - Play Random Sentence.\r\n";
           #endif   
-          //Play Random Misc.     
-          trigger.play(random(6));
+          //Play Random Sentence    
+          trigger.play(random(33,51));
           break;
         case '7':    
           #ifdef SHADOW_DEBUG    
             output += "Sound Button ";
             output += soundCommand;
-            output += " - Play Low Rider.\r\n";
+            output += " - Play Imperial March.\r\n";
           #endif        
-          //Play Cantina Song
-          trigger.play(7);
+          trigger.play(52);
           break;
         case '8':
             #ifdef SHADOW_DEBUG    
               output += "Sound Button ";
               output += soundCommand;
-              output += " - Play Imperial March.\r\n";
+              output += " - Play Intergalactic.\r\n";
             #endif
-            //Play Imperial March
-            trigger.play(8);
+            trigger.play(53);
         break;
         case '9':
             #ifdef SHADOW_DEBUG    
               output += "Sound Button ";
               output += soundCommand;
-              output += " - Play Let It Go.\r\n";
+              output += " - Play Seaguls.\r\n";
             #endif
-            //Play Let It Go
-            trigger.play(9);
+            trigger.play(54);
         break;
         case '0':
             #ifdef SHADOW_DEBUG    
               output += "Sound Button ";
               output += soundCommand;
-              output += " - Play Gangdum Style\r\n";
+              output += " - Play Random Remix\r\n";
             #endif
-            //Play Gangdum Style
-            trigger.play(10);
+            trigger.play(random(54,58));
         break;
         case 'A':
             #ifdef SHADOW_DEBUG    
@@ -1574,21 +1567,21 @@ void ps3soundControl(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
     	if (!(myPS3->getButtonPress(L1)||myPS3->getButtonPress(L2)||myPS3->getButtonPress(PS)))
 	    {
 	      if (myPS3->getButtonClick(UP))          processSoundCommand('1');    
-	      else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('5');    
-	      else if (myPS3->getButtonClick(DOWN))   processSoundCommand('4');    
-	      else if (myPS3->getButtonClick(LEFT))   processSoundCommand('6');    
+	      else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('3');    
+	      else if (myPS3->getButtonClick(DOWN))   processSoundCommand('2');    
+	      else if (myPS3->getButtonClick(LEFT))   processSoundCommand('4');    
 	    } else if (myPS3->getButtonPress(L2))
 	    {
-	      if (myPS3->getButtonClick(UP))          processSoundCommand('2');    
-	      else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('3');    
-	      else if (myPS3->getButtonClick(DOWN))   processSoundCommand('7');    
-	      else if (myPS3->getButtonClick(LEFT))   processSoundCommand('8');    
+	      if (myPS3->getButtonClick(UP))          processSoundCommand('7');    
+	      else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('8');    
+	      else if (myPS3->getButtonClick(DOWN))   processSoundCommand('9');    
+	      else if (myPS3->getButtonClick(LEFT))   processSoundCommand('0');    
 	    } else if (myPS3->getButtonPress(L1))
 	    {
 	      if (myPS3->getButtonClick(UP))          processSoundCommand('+');    
 	      else if (myPS3->getButtonClick(DOWN))   processSoundCommand('-');    
-	      else if (myPS3->getButtonClick(LEFT))   processSoundCommand('9');    
-	      else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('0');    
+	      else if (myPS3->getButtonClick(LEFT))   processSoundCommand('5');    
+	      else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('6');    
 	    } 
 #ifdef EXTRA_SOUNDS
         break;
