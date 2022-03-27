@@ -158,9 +158,11 @@ const int UTIL_ARM_BOTTOM = 2;
 #include <spi4teensy3.h>
 #endif
 #include <Sabertooth.h>
-#include <Servo.h>
 #include <LedControl.h>   
 #include <Wire.h>
+
+//Included for Pololu Maestro
+#include <PololuMaestro.h>
 
 
 #include <MP3Trigger.h>
@@ -170,6 +172,8 @@ MP3Trigger trigger;
 // ---------------------------------------------------------------------------------------
 //                          Variables
 // ---------------------------------------------------------------------------------------
+
+MiniMaestro MaestroBody (Serial2); //create the Maestro
 
 long previousDomeMillis = millis();
 long previousFootMillis = millis();
@@ -225,9 +229,6 @@ byte automateDelay = random(5, 20);
 byte action = 0; //used for automation sounds
 unsigned long DriveMillis = 0;
 
-Servo UtilArmTopServo;  // create servo object to control a servo 
-Servo UtilArmBottomServo;  // create servo object to control a servo
-
 #if FOOT_CONTROLLER ==1
 Servo leftFootSignal;
 Servo rightFootSignal;
@@ -267,6 +268,9 @@ void setup()
       trigger.setup(&Serial1);
       trigger.setVolume(vol);
     #endif
+
+    //Initialize the Pololu Maestro connection
+    Serial2.begin (9600);
 
     //Setup for Serial2:: Motor Controllers - Syren (Dome) and Sabertooth (Feet) 
     Serial.begin(motorControllerBaudRate);
@@ -623,7 +627,7 @@ boolean criticalFaultDetect()
         if(!PS3Nav->getStatus(Plugged) && !PS3Nav->getStatus(Unplugged))
         {
             // We don't have good data from the controller.
-            //Wait 10ms, Update USB, and try again
+            // Wait 10ms, Update USB, and try again
             delay(10);
             Usb.Task();
             if(!PS3Nav->getStatus(Plugged) && !PS3Nav->getStatus(Unplugged))
@@ -1217,7 +1221,15 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing top utility arm\r\n";
               #endif
               
-                //waveUtilArm(UTIL_ARM_TOP); REPLACE!
+                if (isUtilArmTopOpen = false)
+                {
+                  MaestroBody.restartScript(1); // send Open Top Util Arm command to Maestro
+                  isUtilArmTopOpen == true;
+                }
+                else
+                {
+                  MaestroBody.restartScript(1); // send Close Top Util Arm command to Maestro
+                }
           }
           if(myPS3->getButtonPress(L1)&&myPS3->getButtonClick(CIRCLE))
           {
@@ -1225,7 +1237,15 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing bottom utility arm\r\n";
               #endif
               
-                //waveUtilArm(UTIL_ARM_BOTTOM); REPLACE!
+                if (isUtilArmBottomOpen = false)
+                {
+                  // send Open Top Util Arm command to Maestro
+                  isUtilArmBottomOpen == true;
+                }
+                else
+                {
+                  // send Close Top Util Arm command to Maestro
+                }
           }
         break;
       case 2:
@@ -1424,7 +1444,7 @@ void processSoundCommand(char soundCommand)
             output += " - Play Seagulls.\r\n";
           #endif        
           // Play Wolf Whistle
-          trigger.play(9);
+          trigger.play(2);
           break;
         case '3':    
           #ifdef SHADOW_DEBUG    
@@ -1433,7 +1453,7 @@ void processSoundCommand(char soundCommand)
             output += " - Imperial Metal\r\n";
           #endif        
           //Play Doo Doo
-          trigger.play(7);
+          trigger.play(3);
           break;
         case '4':    
           #ifdef SHADOW_DEBUG    
@@ -1442,7 +1462,7 @@ void processSoundCommand(char soundCommand)
             output += " - Play Chortle\r\n";
           #endif        
           //Play Chortle
-          trigger.play(2);
+          trigger.play(4);
           break;
         case '5':    
           #ifdef SHADOW_DEBUG    
@@ -1451,7 +1471,7 @@ void processSoundCommand(char soundCommand)
             output += " - Play Random Sentence.\r\n";
           #endif        
           // Play Random Sentence
-          trigger.play(random(32,52));
+          trigger.play(random(5));
           break;
         case '6':    
           #ifdef SHADOW_DEBUG    
@@ -1460,7 +1480,7 @@ void processSoundCommand(char soundCommand)
             output += " - Play Random Misc.\r\n";
           #endif   
           //Play Random Misc.     
-          trigger.play(random(17,31));
+          trigger.play(random(6));
           break;
         case '7':    
           #ifdef SHADOW_DEBUG    
@@ -1469,7 +1489,7 @@ void processSoundCommand(char soundCommand)
             output += " - Play Low Rider.\r\n";
           #endif        
           //Play Cantina Song
-          trigger.play(5);
+          trigger.play(7);
           break;
         case '8':
             #ifdef SHADOW_DEBUG    
@@ -1478,7 +1498,7 @@ void processSoundCommand(char soundCommand)
               output += " - Play Imperial March.\r\n";
             #endif
             //Play Imperial March
-            trigger.play(11);
+            trigger.play(8);
         break;
         case '9':
             #ifdef SHADOW_DEBUG    
@@ -1487,7 +1507,7 @@ void processSoundCommand(char soundCommand)
               output += " - Play Let It Go.\r\n";
             #endif
             //Play Let It Go
-            trigger.play(55);
+            trigger.play(9);
         break;
         case '0':
             #ifdef SHADOW_DEBUG    
@@ -1496,7 +1516,7 @@ void processSoundCommand(char soundCommand)
               output += " - Play Gangdum Style\r\n";
             #endif
             //Play Gangdum Style
-            trigger.play(54);
+            trigger.play(10);
         break;
         case 'A':
             #ifdef SHADOW_DEBUG    
