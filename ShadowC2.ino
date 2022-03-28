@@ -1223,7 +1223,7 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
               
                 if (isUtilArmTopOpen = false)
                 {
-                  MaestroBody.restartScript(1); // send Open Top Util Arm command to Maestro
+                  MaestroBody.restartScript(0); // send Open Top Util Arm command to Maestro
                   isUtilArmTopOpen == true;
                 }
                 else
@@ -1239,12 +1239,12 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
               
                 if (isUtilArmBottomOpen = false)
                 {
-                  // send Open Top Util Arm command to Maestro
+                  MaestroBody.restartScript(2); // send Open Top Util Arm command to Maestro
                   isUtilArmBottomOpen == true;
                 }
                 else
                 {
-                  // send Close Top Util Arm command to Maestro
+                  MaestroBody.restartScript(3); // send Close Top Util Arm command to Maestro
                 }
           }
         break;
