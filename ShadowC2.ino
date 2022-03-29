@@ -10,6 +10,16 @@
 //                              Modified by Jon Haag
 // =======================================================================================
 //
+//   Jon's Changelog:
+//        03/29/2022
+//          - Reverted base code back to latest original code (as of 04/2019)
+//          - Updated values for drive speed, dome auto speed, and startup volume
+//          - Added random sounds to dome automation
+//          - Reordered sound commands & updated to match C2's custom sounds
+//          - Added initialization for Pololu Maestro on Serial2
+//
+// =======================================================================================
+//
 //         This program is free software: you can redistribute it and/or modify it .
 //         This program is distributed in the hope that it will be useful,
 //         but WITHOUT ANY WARRANTY; without even the implied warranty of
