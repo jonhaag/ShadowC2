@@ -379,6 +379,10 @@ Servo leftFootSignal;
 Servo rightFootSignal;
 #endif
 
+boolean bothDoorsOpen = false;
+boolean topArmOpen = false;
+boolean bottomArmOpen = false;
+
 // =======================================================================================
 //                          Main Program
 // =======================================================================================
@@ -439,6 +443,13 @@ void setup()
     //       the autobaud line and save yourself two seconds of startup delay.
 
 
+    MiniMaestro MaestroBody (Serial2);
+    
+    MaestroBody.restartScript(5); // close body doors
+    MaestroBody.restartScript(1); // close top utility arm
+    MaestroBody.restartScript(3); // close bottom utility arm
+    
+    
     #ifdef DOME_I2C_ADAFRUIT           
         domePWM.begin();
         domePWM.setPWMFreq(50);  // Analog servos run at ~50 Hz updates
@@ -469,7 +480,9 @@ void setup()
       coinSlotLedState[i] = LOW;
       digitalWrite(COIN_SLOT_LED_PINS[i], LOW); // all LEDs off
       nextCoinSlotLedFlash[i] = millis() +random(100, 1000);
-    }     
+    }  
+
+    
 }
 
 boolean readUSB()
@@ -1274,21 +1287,31 @@ boolean adafruitPs3Holoprojector(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1
     ////turn hp light on & off
     if( !(myPS3->getButtonPress(PS)) && myPS3->getButtonClick(L3))
     {
-        if (holoLightFrontStatus != HOLO_LED_OFF)
-  {
-            #ifdef SHADOW_DEBUG      
-              output += "Turning Off Holo Light\r\n";
-            #endif
-            holoLightFrontStatus = HOLO_LED_OFF;
-            holoLightOff(HOLO_FRONT_RED_PWM_PIN, HOLO_FRONT_GREEN_PWM_PIN, HOLO_FRONT_BLUE_PWM_PIN);
-  } else
-  {
-            #ifdef SHADOW_DEBUG      
-              output += "Turning On Holo Light\r\n";
-            #endif
-            holoLightFrontStatus = HOLO_LED_ON;
-            holoLightOn(HOLO_FRONT_RED_PWM_PIN, HOLO_FRONT_GREEN_PWM_PIN, HOLO_FRONT_BLUE_PWM_PIN);
-  }      
+//        if (holoLightFrontStatus != HOLO_LED_OFF)
+//  {
+//            #ifdef SHADOW_DEBUG      
+//              output += "Turning Off Holo Light\r\n";
+//            #endif
+//            holoLightFrontStatus = HOLO_LED_OFF;
+//            holoLightOff(HOLO_FRONT_RED_PWM_PIN, HOLO_FRONT_GREEN_PWM_PIN, HOLO_FRONT_BLUE_PWM_PIN);
+//  } else
+//  {
+//            #ifdef SHADOW_DEBUG      
+//              output += "Turning On Holo Light\r\n";
+//            #endif
+//            holoLightFrontStatus = HOLO_LED_ON;
+//            holoLightOn(HOLO_FRONT_RED_PWM_PIN, HOLO_FRONT_GREEN_PWM_PIN, HOLO_FRONT_BLUE_PWM_PIN);
+//  }   
+
+    if( bothDoorsOpen == false)
+    {
+        MaestroBody.restartScript(4); // open both doors
+        bothDoorsOpen == true;
+    } else
+    {
+        MaestroBody.restartScript(5); // close both doors
+        bothDoorsOpen == false;
+    }
         return true;
     }
 
@@ -1297,17 +1320,23 @@ boolean adafruitPs3Holoprojector(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1
     {
         if(myPS3->getButtonPress(UP))
         {
-            #ifdef SHADOW_DEBUG
-              output += "Move Holo Up\r\n";
-            #endif
-            moveHoloServo(HOLO_FRONT_Y_PWM_PIN, HOLO_FRONT_Y_SERVO_MAX);
+//            #ifdef SHADOW_DEBUG
+//              output += "Move Holo Up\r\n";
+//            #endif
+//            moveHoloServo(HOLO_FRONT_Y_PWM_PIN, HOLO_FRONT_Y_SERVO_MAX);
+          
+          MaestroBody.restartScript(6); // gripper arm deploy     
+
         }        
         if(myPS3->getButtonPress(DOWN))
         {
-            #ifdef SHADOW_DEBUG
-              output += "Move Holo Down\r\n";
-            #endif
-            moveHoloServo(HOLO_FRONT_Y_PWM_PIN, HOLO_FRONT_Y_SERVO_MIN);
+//            #ifdef SHADOW_DEBUG
+//              output += "Move Holo Down\r\n";
+//            #endif
+//            moveHoloServo(HOLO_FRONT_Y_PWM_PIN, HOLO_FRONT_Y_SERVO_MIN);
+          
+          MaestroBody.restartScript(7); // door & arm wave     
+
         }
         if(myPS3->getButtonPress(LEFT))
         {
@@ -1527,7 +1556,10 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing top utility arm\r\n";
               #endif
               
-                waveUtilArm(UTIL_ARM_TOP);
+//                waveUtilArm(UTIL_ARM_TOP);
+
+              MaestroBody.restartScript(0); // open top utility arm     
+
           }
           if(myPS3->getButtonPress(L1)&&myPS3->getButtonClick(CIRCLE))
           {
@@ -1535,8 +1567,11 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing bottom utility arm\r\n";
               #endif
               
-                waveUtilArm(UTIL_ARM_BOTTOM);
-          }
+//                waveUtilArm(UTIL_ARM_BOTTOM);
+
+          
+              MaestroBody.restartScript(2); // open bottom utility arm    
+
         break;
       case 2:
         if (!(myPS3->getButtonPress(L1)||myPS3->getButtonPress(L2)||myPS3->getButtonPress(PS)))
