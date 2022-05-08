@@ -85,7 +85,7 @@ byte turnspeed = 75; //50;     // the higher this number the faster it will spin
 byte domespeed = 100;    // If using a speed controller for the dome, sets the top speed
                          // Use a number up to 127 for serial
 
-byte ramping = 3; //3;        // Ramping- the lower this number the longer R2 will take to speedup or slow down,
+byte ramping = 4; //3;        // Ramping- the lower this number the longer R2 will take to speedup or slow down,
                          // change this by increments of 1
 int footDriveSpeed = 0;  //This was moved to be global to support better ramping of NPC Motors
 
@@ -95,13 +95,13 @@ byte driveDeadBandRange = 10;     // Used to set the Sabertooth DeadZone for foo
 
 int invertTurnDirection = -1;   //This may need to be set to 1 for some configurations
 byte domeAutoSpeed = 100;     // Speed used when dome automation is active (1- 127)
-int time360DomeTurnLeft = 1000;  // milliseconds for dome to complete 360 turn at domeAutoSpeed
-int time360DomeTurnRight = 300;  // milliseconds for dome to complete 360 turn at domeAutoSpeed
+int time360DomeTurnLeft = 700;  // milliseconds for dome to complete 360 turn at domeAutoSpeed
+int time360DomeTurnRight = 700;  // milliseconds for dome to complete 360 turn at domeAutoSpeed
                                 ///Cut in half to reduce spin.  Offset for different rotation startups due to gearing.
 
 //#define TEST_CONROLLER   //Support coming soon
-#define SHADOW_DEBUG       //uncomment this for console DEBUG output
-#define SHADOW_VERBOSE     //uncomment this for console VERBOSE output
+//#define SHADOW_DEBUG       //uncomment this for console DEBUG output
+//#define SHADOW_VERBOSE     //uncomment this for console VERBOSE output
 //#define BLUETOOTH_SERIAL     //uncomment this for console output via bluetooth.  
 // NOTE:  BLUETOOTH_SERIAL is suspected of adding CPU load in high traffic areas
 
@@ -215,6 +215,7 @@ MP3Trigger trigger;
 
 //Included for Pololu Maestro
 #include <PololuMaestro.h>
+//#include <SoftwareSerial.h>
 
 //Custom written Libraryy for the old CFSoundIII to emulate 12 button remote
 //CFSoundIII needs a supporting CFSOUND.BAS version running on the CFSoundIII 
@@ -235,7 +236,12 @@ CFSoundIII cfSound;
 //                          Variables
 // ---------------------------------------------------------------------------------------
 
-MiniMaestro MaestroBody (Serial2); //create the Maestro
+//SoftwareSerial MaestroSerial_1 (10,11);
+MiniMaestro MaestroBody (Serial3); //create the Maestro
+
+boolean topUtilArmOpen = false;
+boolean bottomUtilArmOpen = false;
+boolean doorsOpen = false;
 
 long previousDomeMillis = millis();
 long previousFootMillis = millis();
@@ -379,10 +385,6 @@ Servo leftFootSignal;
 Servo rightFootSignal;
 #endif
 
-boolean bothDoorsOpen = false;
-boolean topArmOpen = false;
-boolean bottomArmOpen = false;
-
 // =======================================================================================
 //                          Main Program
 // =======================================================================================
@@ -443,13 +445,6 @@ void setup()
     //       the autobaud line and save yourself two seconds of startup delay.
 
 
-    MiniMaestro MaestroBody (Serial2);
-    
-    MaestroBody.restartScript(5); // close body doors
-    MaestroBody.restartScript(1); // close top utility arm
-    MaestroBody.restartScript(3); // close bottom utility arm
-    
-    
     #ifdef DOME_I2C_ADAFRUIT           
         domePWM.begin();
         domePWM.setPWMFreq(50);  // Analog servos run at ~50 Hz updates
@@ -480,8 +475,14 @@ void setup()
       coinSlotLedState[i] = LOW;
       digitalWrite(COIN_SLOT_LED_PINS[i], LOW); // all LEDs off
       nextCoinSlotLedFlash[i] = millis() +random(100, 1000);
-    }  
+    }
 
+    Serial3.begin(9600);
+    
+    //Close doors and arms
+     MaestroBody.restartScript(1); //close Top Utility Arm
+     MaestroBody.restartScript(3); //close Bottom Utility Arm
+     MaestroBody.restartScript(5); //close both Doors
     
 }
 
@@ -975,7 +976,6 @@ void mixBHD(byte stickX, byte stickY, byte maxDriveSpeed){
       /* Debugging by KnightShade 
       //Driving is TOO sensitive.   Need to dial down the turning to a different scale factor.
       This code will map teh linear values to a flatter value range.
-
       //The larger SteeringFactor is the less senstitive steering is...  
       //Smaller values give more accuracy in making fine steering corrections
         XDist*sqrt(XDist+SteeringFactor)
@@ -1233,7 +1233,6 @@ int ps3DomeDrive(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
             #ifdef SHADOW_DEBUG
               output += "Dome Automation OFF\r\n";
             #endif
-
         }
     */
     }
@@ -1301,17 +1300,8 @@ boolean adafruitPs3Holoprojector(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1
 //            #endif
 //            holoLightFrontStatus = HOLO_LED_ON;
 //            holoLightOn(HOLO_FRONT_RED_PWM_PIN, HOLO_FRONT_GREEN_PWM_PIN, HOLO_FRONT_BLUE_PWM_PIN);
-//  }   
-
-    if( bothDoorsOpen == false)
-    {
-        MaestroBody.restartScript(4); // open both doors
-        bothDoorsOpen == true;
-    } else
-    {
-        MaestroBody.restartScript(5); // close both doors
-        bothDoorsOpen == false;
-    }
+//  }      
+        MaestroBody.restartScript(6);
         return true;
     }
 
@@ -1324,8 +1314,19 @@ boolean adafruitPs3Holoprojector(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1
 //              output += "Move Holo Up\r\n";
 //            #endif
 //            moveHoloServo(HOLO_FRONT_Y_PWM_PIN, HOLO_FRONT_Y_SERVO_MAX);
-          
-          MaestroBody.restartScript(6); // gripper arm deploy     
+
+        //Open or Close Both Doors
+        if(doorsOpen == false)
+        {
+          MaestroBody.restartScript(4); //Open both doors
+          doorsOpen = true;
+        }
+        else
+        {
+          MaestroBody.restartScript(5); //Close both doors
+          doorsOpen = false;
+        }
+
 
         }        
         if(myPS3->getButtonPress(DOWN))
@@ -1334,9 +1335,10 @@ boolean adafruitPs3Holoprojector(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1
 //              output += "Move Holo Down\r\n";
 //            #endif
 //            moveHoloServo(HOLO_FRONT_Y_PWM_PIN, HOLO_FRONT_Y_SERVO_MIN);
-          
-          MaestroBody.restartScript(7); // door & arm wave     
 
+          //Door and Arm Wave
+          MaestroBody.restartScript(7); //wave doors and arms
+          
         }
         if(myPS3->getButtonPress(LEFT))
         {
@@ -1556,10 +1558,17 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing top utility arm\r\n";
               #endif
               
-//                waveUtilArm(UTIL_ARM_TOP);
-
-              MaestroBody.restartScript(0); // open top utility arm     
-
+                //waveUtilArm(UTIL_ARM_TOP);
+                if(topUtilArmOpen == false)
+                {
+                   MaestroBody.restartScript(0);
+                   topUtilArmOpen = true;
+                }
+                else
+                {
+                   MaestroBody.restartScript(1);
+                   topUtilArmOpen = false;
+                }
           }
           if(myPS3->getButtonPress(L1)&&myPS3->getButtonClick(CIRCLE))
           {
@@ -1567,11 +1576,18 @@ void ps3utilityArms(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
                 output += "Opening/Closing bottom utility arm\r\n";
               #endif
               
-//                waveUtilArm(UTIL_ARM_BOTTOM);
-
-          
-              MaestroBody.restartScript(2); // open bottom utility arm    
-
+                //waveUtilArm(UTIL_ARM_BOTTOM);
+                if(bottomUtilArmOpen == false)
+                {
+                   MaestroBody.restartScript(2);
+                   bottomUtilArmOpen = true;
+                }
+                else
+                {
+                   MaestroBody.restartScript(3);
+                   bottomUtilArmOpen = false;
+                }
+          }
         break;
       case 2:
         if (!(myPS3->getButtonPress(L1)||myPS3->getButtonPress(L2)||myPS3->getButtonPress(PS)))
@@ -2202,6 +2218,7 @@ void openUtilArm(int arm, int position = utilArmOpenPos)
     //When passed a position - this can "partially" open the arms.
     //Great for more interaction
     moveUtilArm(arm, utilArmOpenPos);
+    
 }
 
 void closeUtilArm(int arm)
