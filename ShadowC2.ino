@@ -1,7 +1,7 @@
 // =======================================================================================
 //                 SHADOW :  Small Handheld Arduino Droid Operating Wand
 // =======================================================================================
-//                          Last Revised Date: 03/29/2022
+//                          Last Revised Date: 03/22/2023
 //                             Written By: KnightShade
 //                        Inspired by the PADAWAN by danf
 //                      Bug Fixes from BlackSnake and vint43
@@ -11,6 +11,9 @@
 // =======================================================================================
 //
 //   Jon's Changelog:
+//        03/22/2023
+//          - Added support for embedded Human Cyborg Relations (HCR) vocalizer board
+//
 //        03/29/2022
 //          - Reverted base code back to latest original code (as of 04/2019)
 //          - Updated values for drive speed, dome auto speed, and startup volume
@@ -82,7 +85,7 @@ byte drivespeed2 = 127;  //Recommend beginner: 50 to 75, experienced: 100 to 127
 byte turnspeed = 75; //50;     // the higher this number the faster it will spin in place, lower - easier to control.
                          // Recommend beginner: 40 to 50, experienced: 50 $ up, I like 75
 
-byte domespeed = 100;    // If using a speed controller for the dome, sets the top speed
+byte domespeed = 127;    // If using a speed controller for the dome, sets the top speed
                          // Use a number up to 127 for serial
 
 byte ramping = 4; //3;        // Ramping- the lower this number the longer R2 will take to speedup or slow down,
@@ -127,9 +130,10 @@ int motorControllerBaudRate = 9600; // Set the baud rate for the Syren motor con
 // ---------------------------------------------------------------------------------------
 //Uncomment one line based on your sound system
 //#define SOUND_CFSOUNDIII     //Original system tested with SHADOW
-#define SOUND_MP3TRIGGER   //Code Tested by Dave C. and Marty M.
+//#define SOUND_MP3TRIGGER   //Code Tested by Dave C. and Marty M.
 //#define SOUND_ROGUE_RMP3   //Support coming soon
 //#define SOUND_RASBERRYPI   //Support coming soon
+#define SOUND_HCR // Human Cyborg Relations Vocalizer board
 
 //#define EXTRA_SOUNDS
 
@@ -211,6 +215,11 @@ int coinSlotLedState[numberOfCoinSlotLEDs]; // Array indicating the state of the
 #ifdef SOUND_MP3TRIGGER
 #include <MP3Trigger.h>
 MP3Trigger trigger;
+#endif
+
+#ifdef SOUND_HCR
+  #include <hcr.h>
+  HCRVocalizer HCR(&Serial1, 9600); // Use Serial1 for HCR
 #endif
 
 //Included for Pololu Maestro
@@ -361,7 +370,14 @@ boolean isDomeMotorStopped = true;
 boolean isPS3NavigatonInitialized = false;
 boolean isSecondaryPS3NavigatonInitialized = false;
 
+#ifdef SOUND_MP3TRIGGER
 byte vol = 40; // 0 = full volume, 255 off
+#endif
+
+#ifdef SOUND_HCR
+byte vol = 80; // 0 = off, 100 = full volume
+#endif
+
 boolean isStickEnabled = true;
 byte isAutomateDomeOn = false;
 unsigned long automateMillis = 0;
@@ -415,10 +431,19 @@ void setup()
     #ifdef SOUND_CFSOUNDIII
       cfSound.setup(&Serial1,2400);    
     #endif
+    
     #ifdef SOUND_MP3TRIGGER
       trigger.setup(&Serial1);
       trigger.setVolume(vol);
     #endif
+
+    #ifdef SOUND_HCR
+      HCR.begin(); // start the HCR
+      HCR.SetVolume(CH_V,vol);
+      HCR.SetVolume(CH_A,vol);
+      HCR.SetVolume(CH_B,vol);
+    #endif
+    
 
     //Setup for Serial2:: Motor Controllers - Syren (Dome) and Sabertooth (Feet) 
     Serial2.begin(motorControllerBaudRate);
@@ -705,7 +730,15 @@ void automateDome()
             action = random(1, 5);
       
             if (action > 1) {
-              trigger.play(random(17, 51));
+              
+              #ifdef SOUND_MP3TRIGGER
+                trigger.play(random(17, 51));
+              #endif
+
+              #ifdef SOUND_HCR
+                HCR.Muse();
+              #endif
+              
               automateDelay = random(3,10);
             }
           }
@@ -1771,7 +1804,175 @@ void processSoundCommand(char soundCommand)
     }
     #endif
 
-     #ifdef SOUND_MP3TRIGGER
+    #ifdef SOUND_HCR
+    switch (soundCommand)
+    {
+        case '+':
+            #ifdef SHADOW_DEBUG    
+              output += "Volume Up\r\n";
+            #endif
+            if (vol<100)
+            {
+                vol++;
+                HCR.SetVolume(CH_V,vol);
+                HCR.SetVolume(CH_A,vol);
+                HCR.SetVolume(CH_B,vol);
+            }
+        break;
+        case '-':   
+            #ifdef SHADOW_DEBUG 
+              output += "Volume Down\r\n";
+            #endif
+            if (vol>0)
+            {
+                vol--;
+                HCR.SetVolume(CH_V,vol);
+                HCR.SetVolume(CH_A,vol);
+                HCR.SetVolume(CH_B,vol);
+            }
+        break;
+        
+        case '1':  
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Moderate Happy Emote\r\n";
+          #endif
+
+          HCR.Stimulate(HAPPY,EMOTE_MODERATE);
+          break;
+        
+        case '2':   
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Moderate Sad Emote\r\n";
+          #endif        
+          
+          HCR.Stimulate(SAD,EMOTE_MODERATE);
+          break;
+        
+        case '3':    
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Moderate Mad Emote\r\n";
+          #endif     
+          
+          HCR.Stimulate(MAD,EMOTE_MODERATE);
+          break;
+        
+        case '4':    
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Moderate Scared Emote\r\n";
+          #endif        
+          
+          HCR.Stimulate(SCARED,EMOTE_MODERATE);
+          break;
+        
+        case '5':    
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Strong Happy Emote\r\n";
+          #endif        
+
+          HCR.Stimulate(HAPPY,EMOTE_STRONG);
+          break;
+        
+        case '6':    
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Strong Sad Emote\r\n";
+          #endif      
+          
+          HCR.Stimulate(SAD,EMOTE_STRONG);
+          break;
+        
+        case '7':    
+          #ifdef SHADOW_DEBUG    
+            output += "Sound Button ";
+            output += soundCommand;
+            output += " - Play Strong Mad Emote\r\n";
+          #endif        
+          
+          HCR.Stimulate(MAD,EMOTE_STRONG);
+          break;
+        
+        case '8':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play Strong Scared Emote\r\n";
+            #endif
+            
+            HCR.Stimulate(SCARED,EMOTE_STRONG);
+            break;
+        
+        case '9':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play Random Song (1-4)\r\n";
+            #endif
+
+            HCR.PlayWAV(CH_A,random(1,4));
+            break;
+        
+        case '0':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play Random Song (5-8)\r\n";
+            #endif
+            
+            HCR.PlayWAV(CH_A,random(5,8));
+            break;
+        
+        case 'A':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play Upset a Droid\r\n";
+            #endif
+
+        break;
+        case 'B':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play Summer\r\n";
+            #endif
+
+        break;
+        case 'C':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play Everything is Awesome\r\n";
+            #endif
+
+        break;
+        case 'D':
+            #ifdef SHADOW_DEBUG    
+              output += "Sound Button ";
+              output += soundCommand;
+              output += " - Play What Does the Fox Say\r\n";
+            #endif
+
+        break;
+        default:
+            #ifdef SHADOW_DEBUG
+              output += "Invalid Sound Command\r\n";
+            #endif
+            HCR.Muse();
+    }
+    #endif
+
+    #ifdef SOUND_MP3TRIGGER
     switch (soundCommand) 
     {
         case '+':
@@ -1939,16 +2140,16 @@ void ps3soundControl(PS3BT* myPS3 = PS3Nav, int controllerNumber = 1)
         else if (myPS3->getButtonClick(LEFT))   processSoundCommand('4');    
       } else if (myPS3->getButtonPress(L2))
       {
-        if (myPS3->getButtonClick(UP))          processSoundCommand('7');    
-        else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('8');    
-        else if (myPS3->getButtonClick(DOWN))   processSoundCommand('9');    
-        else if (myPS3->getButtonClick(LEFT))   processSoundCommand('0');    
+        if (myPS3->getButtonClick(UP))          processSoundCommand('5');    
+        else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('6');    
+        else if (myPS3->getButtonClick(DOWN))   processSoundCommand('7');    
+        else if (myPS3->getButtonClick(LEFT))   processSoundCommand('8');    
       } else if (myPS3->getButtonPress(L1))
       {
         if (myPS3->getButtonClick(UP))          processSoundCommand('+');    
         else if (myPS3->getButtonClick(DOWN))   processSoundCommand('-');    
-        else if (myPS3->getButtonClick(LEFT))   processSoundCommand('5');    
-        else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('6');    
+        else if (myPS3->getButtonClick(LEFT))   processSoundCommand('9');    
+        else if (myPS3->getButtonClick(RIGHT))  processSoundCommand('0');    
       } 
 #ifdef EXTRA_SOUNDS
         break;
